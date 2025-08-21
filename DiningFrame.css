@@ -1,0 +1,457 @@
+.dining-frame {
+  width: 100%;
+  max-width: 414px;
+  min-height: 100vh;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  margin: 0 auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Header */
+.dining-header {
+  background: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  padding: 18px 16px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  line-height: 28px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.action-btn {
+  width: 30px;
+  height: 40px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.icon {
+  font-size: 14px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  background: #f59e0b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-badge span {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 14.5px;
+}
+
+/* Date Section */
+.date-section {
+  background: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  padding: 12px 16px;
+  height: 49px;
+  display: flex;
+  align-items: center;
+}
+
+.date-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.date-label {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 20px;
+}
+
+.current-date {
+  font-size: 16px;
+  font-weight: 500;
+  color: #111827;
+  line-height: 24px;
+}
+
+.change-btn {
+  background: transparent;
+  border: none;
+  color: #0ea5e9;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  line-height: 16.9px;
+}
+
+/* Main Content */
+.dining-main {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 100px; /* Bottom nav space */
+}
+
+/* Status Card */
+.status-card {
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 114px;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.status-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  line-height: 24px;
+}
+
+.status-indicator {
+  width: 20px;
+  height: 16px;
+}
+
+.indicator-dot {
+  width: 20px;
+  height: 16px;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.status-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.crowd-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background: #22c55e;
+}
+
+.status-text {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 20px;
+}
+
+.progress-bar {
+  width: 100%;
+  max-width: 193.64px;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+}
+
+.progress-fill.green {
+  background: #22c55e;
+  width: 25%;
+}
+
+.waiting-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.waiting-label {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 20px;
+}
+
+.waiting-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #16a34a;
+  line-height: 24px;
+}
+
+/* Meal Cards */
+.meal-card {
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 230px;
+}
+
+.meal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.meal-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.icon-dot.blue {
+  background: #0ea5e9;
+}
+
+.meal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  line-height: 24px;
+  flex: 1;
+}
+
+.meal-time {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 20px;
+  text-align: right;
+}
+
+.meal-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.item-name {
+  font-size: 14px;
+  color: #374151;
+  line-height: 20px;
+}
+
+.nutrition-info {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 68px;
+}
+
+.nutrition-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.nutrition-row:last-child {
+  margin-bottom: 0;
+}
+
+.nutrition-label {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 20px;
+}
+
+.nutrition-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #14b8a6;
+  line-height: 20px;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  height: 81px;
+  padding: 8px 16px;
+  width: 100%;
+  max-width: 414px;
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  width: 64px;
+  height: 64px;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  transform: translateY(-2px);
+}
+
+.nav-icon {
+  width: 20px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.nav-label {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 16px;
+}
+
+.nav-btn.active .nav-label {
+  color: #0ea5e9;
+  font-weight: 500;
+}
+
+/* Mobile Responsive */
+@media (max-width: 414px) {
+  .dining-frame {
+    max-width: 100%;
+  }
+  
+  .bottom-nav {
+    max-width: 100%;
+  }
+  
+  .status-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .waiting-time {
+    align-items: flex-start;
+  }
+  
+  .meal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .meal-time {
+    text-align: left;
+  }
+}
+
+@media (max-width: 375px) {
+  .dining-main {
+    padding: 12px;
+  }
+  
+  .meal-card,
+  .status-card {
+    padding: 12px;
+  }
+}
