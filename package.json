@@ -1,29 +1,29 @@
 {
-  "name": "reactpackage",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "dormhub_fresh",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^7.8.1"
+    "@expo-google-fonts/noto-sans-kr": "^0.4.1",
+    "expo": "~53.0.22",
+    "expo-blur": "~14.1.5",
+    "expo-font": "~13.3.2",
+    "expo-router": "~5.1.5",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-native": "0.79.6",
+    "@react-native-async-storage/async-storage": "2.1.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.0",
-    "@eslint/js": "^9.22.0",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.7.0",
-    "eslint": "^9.22.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^16.0.0",
-    "vite": "^5.4.19"
-  }
+    "@babel/core": "^7.20.0",
+    "@types/react": "^19.1.12",
+    "typescript": "^5.9.2"
+  },
+  "private": true
 }
