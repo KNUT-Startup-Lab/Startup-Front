@@ -79,7 +79,7 @@ export default function Index() {
 
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() => router.push({ pathname: '/auth/login', params: { role } })}
+        onPress={() => router.push({ pathname: '/(auth)/login', params: { role } })}
         style={styles.startWrap}
       >
         <BlurView intensity={25} tint="light" style={styles.startBtn}>
