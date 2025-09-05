@@ -13,7 +13,7 @@ export default function FindId() {
     try{
       if(!name || !phone) return Alert.alert('안내','이름/전화번호를 입력하세요.');
       const res = await AuthAPI.findEmail({ name, phone });
-      router.push({ pathname:'/auth/find-id-result', params:{ email: res.email } });
+      router.push({ pathname:'/(auth)/find-id-result', params:{ email: res.email } });
     }catch(e:any){ Alert.alert('오류', e.message ?? '조회 실패'); }
   }
 
@@ -24,7 +24,7 @@ export default function FindId() {
       <TextInput style={styles.input} placeholder="전화번호" value={phone} onChangeText={setPhone} placeholderTextColor="#9AA1AF"/>
       <TouchableOpacity style={styles.primaryBtn} onPress={onFind}><Text style={styles.primaryBtnText}>아이디 찾기</Text></TouchableOpacity>
 
-      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/auth/login')}>
+      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/(auth)/login')}>
         <Image source={homeLogo} style={styles.homeIcon}/>
       </TouchableOpacity>
     </View>

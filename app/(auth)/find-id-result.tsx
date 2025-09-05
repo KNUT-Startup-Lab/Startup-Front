@@ -1,4 +1,4 @@
-// app/auth/find-id-result.tsx
+// app/(auth)/find-id-result.tsx
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,7 +17,7 @@ export default function FindIdResult() {
         <Text style={[styles.txt, styles.bold]}>{email ?? '-'}</Text>
         <Text style={styles.txt}>입니다.</Text>
       </View>
-      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/auth/login')}>
+      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/(auth)/login')}>
         <Image source={homeLogo} style={styles.homeIcon}/>
       </TouchableOpacity>
     </View>

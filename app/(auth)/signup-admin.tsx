@@ -1,4 +1,4 @@
-// app/auth/signup-admin.tsx
+// app/(auth)/signup-admin.tsx
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -31,7 +31,7 @@ export default function SignupAdmin() {
       setLoading(true);
       const res = await AuthAPI.signup(form);
       Alert.alert('완료', res.message || '회원가입 성공', [
-        { text: '확인', onPress: () => router.replace('/auth/login') },
+        { text: '확인', onPress: () => router.replace('/(auth)/login') },
       ]);
     } catch (e: any) {
       Alert.alert('오류', e.message ?? '회원가입 실패');
@@ -95,7 +95,7 @@ export default function SignupAdmin() {
         <Text style={styles.primaryBtnText}>{loading ? '처리 중...' : '가입하기'}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/auth/login')}>
+      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/(auth)/login')}>
         <Image source={homeLogo} style={styles.homeIcon} />
       </TouchableOpacity>
     </View>

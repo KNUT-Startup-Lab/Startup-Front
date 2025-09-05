@@ -22,7 +22,7 @@ export default function SetNewPassword() {
     }
     // TODO: 실제 비밀번호 변경 API 호출
     Alert.alert('완료', '비밀번호가 변경되었습니다.', [
-      { text: '확인', onPress: () => router.replace('/auth/login') },
+      { text: '확인', onPress: () => router.replace('/(auth)/login') },
     ]);
   };
 
@@ -51,7 +51,7 @@ export default function SetNewPassword() {
         <Text style={styles.primaryBtnText}>저장</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/auth/login')}>
+      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/(auth)/login')}>
         <Image source={homeLogo} style={styles.homeIcon} />
       </TouchableOpacity>
     </View>

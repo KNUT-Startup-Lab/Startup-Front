@@ -1,4 +1,4 @@
-// app/auth/reset-password.tsx  (임시 비번 발송)
+// app/(auth)/reset-password.tsx  (임시 비번 발송)
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,7 +16,7 @@ export default function ResetPassword() {
       setLoading(true);
       const res = await AuthAPI.findPassword({ email, phone });
       Alert.alert('완료', res.message || '임시 비밀번호가 발송되었습니다.', [
-        { text:'확인', onPress: ()=> router.replace('/auth/login') }
+        { text:'확인', onPress: ()=> router.replace('/(auth)/login') }
       ]);
     }catch(e:any){ Alert.alert('오류', e.message ?? '요청 실패'); }
     finally{ setLoading(false); }
@@ -30,7 +30,7 @@ export default function ResetPassword() {
       <TouchableOpacity style={[styles.primaryBtn, loading && {opacity:0.6}]} disabled={loading} onPress={onSubmit}>
         <Text style={styles.primaryBtnText}>{loading?'처리 중...':'임시 비밀번호 발송'}</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/auth/login')}>
+      <TouchableOpacity style={styles.homeWrap} onPress={() => router.replace('/(auth)/login')}>
         <Image source={homeLogo} style={styles.homeIcon}/>
       </TouchableOpacity>
     </View>
