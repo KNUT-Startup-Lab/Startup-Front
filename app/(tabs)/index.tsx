@@ -1,7 +1,7 @@
 // app/(tabs)/index.tsx
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView,
   StyleProp, ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
@@ -11,49 +11,70 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import PastelAuraBackground from '../../src/components/AuraBackground';
 
-// ===== 디자인 토큰 =====
+/* ===== 디자인 토큰 ===== */
 const BASE = '#D6DDFF';                       // 헤더/탭 톤
 const BG = '#F6F8FF';                         // 전체 배경
-const GLASS = 'rgba(255,255,255,0.65)';       // ← 살짝 진하게
-const GLASS_BORDER = 'rgba(255,255,255,0.85)';// ← 경계도 조금 진하게
+const GLASS = 'rgba(255,255,255,0.65)';       // 글래스 배경
+const GLASS_BORDER = 'rgba(255,255,255,0.85)';// 글래스 테두리
 const TINT = '#2C6DF7';
 const TINT_GREEN = '#11B38D';
 const TITLE = '#0E1420';
 
-// 헤더 보라색 영역의 본문 높이
+/** 헤더 보라색 영역 ‘본문’ 높이(상태바 높이는 자동 더해짐) */
 const HEADER_PURPLE_HEIGHT = 44;
 
+/* ===== 역할 유틸 ===== */
+type RoleKey = 'student' | 'admin';
+function normalizeRole(raw?: string | null): RoleKey {
+  const v = (raw ?? '').toLowerCase();
+  if (v.startsWith('admin') || v.includes('관리')) return 'admin';
+  return 'student';
+}
+function roleLabel(role: RoleKey) {
+  return role === 'admin' ? '관리자' : '학생';
+}
+function roleColor(role: RoleKey) {
+  return role === 'admin' ? '#A65DF5' : '#2C6DF7';
+}
+
+/* ===== 메인 화면 ===== */
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
-  // ---- 사용자 이름 ----
   const [userName, setUserName] = useState<string>('');
+  const [role, setRole] = useState<RoleKey>('student');
 
   useFocusEffect(
     useCallback(() => {
       (async () => {
+        // 이름 로드
         const name = await AsyncStorage.getItem('userName');
         setUserName(name ?? '');
+
+        // 역할 로드(여러 키 호환)
+        const r1 = await AsyncStorage.getItem('userRole');
+        const r2 = r1 ?? (await AsyncStorage.getItem('role'));
+        const r3 = r2 ?? (await AsyncStorage.getItem('selectedRole'));
+        setRole(normalizeRole(r3));
       })();
     }, [])
   );
 
-  const topBgStyle: StyleProp<ViewStyle> = {
-    height: insets.top + HEADER_PURPLE_HEIGHT,
-  };
-
+  const topBgStyle: StyleProp<ViewStyle> = { height: insets.top + HEADER_PURPLE_HEIGHT };
   const initial = userName?.[0] || '유';
+  const roleText = roleLabel(role);
+  const roleTint = roleColor(role);
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* 뒤 배경 (은은한 파스텔 애니메이션) */}
+      {/* 움직이는 파스텔 배경 */}
       <PastelAuraBackground />
 
       {/* 상단 보라색 배경 */}
       <View style={[styles.topBg, topBgStyle]} />
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* ===== 헤더 영역 (보라색 영역) ===== */}
+        {/* ===== 헤더 영역 ===== */}
         <View style={[styles.topHero, { paddingTop: insets.top + 8 }]}>
           {/* 인사 카드 */}
           <View style={styles.greetCardWrap}>
@@ -61,12 +82,31 @@ export default function HomeScreen() {
               <View style={[styles.avatar, styles.avatarFallback]}>
                 <Text style={styles.avatarInitial}>{initial}</Text>
               </View>
+
               <View style={{ flex: 1 }}>
-                <Text style={styles.greetTitle}>
-                  안녕하세요, {userName ? userName : '사용자'}님!
-                </Text>
+                {/* 이름 + 역할 배지 한 줄 */}
+                <View style={styles.nameRow}>
+                  <Text style={styles.greetTitle}>
+                    안녕하세요, {userName ? userName : '사용자'}님!
+                  </Text>
+
+                  {/* 역할 배지(글래스) */}
+                  <View style={styles.rolePill}>
+                    <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+                    <View style={[styles.rolePillBorder, { borderColor: roleTint + '88' }]} />
+                    <Ionicons
+                      name={role === 'admin' ? 'shield-checkmark' : 'school'}
+                      size={12}
+                      color={roleTint}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text style={[styles.roleText, { color: roleTint }]}>{roleText}</Text>
+                  </View>
+                </View>
+
                 <Text style={styles.greetSub}>오늘 비가와요. 우산을 챙기세요.</Text>
               </View>
+
               <View style={styles.bellWrap}>
                 <View style={styles.badge}><Text style={styles.badgeText}>3</Text></View>
                 <Ionicons name="notifications-outline" size={22} color={TITLE} />
@@ -97,7 +137,6 @@ export default function HomeScreen() {
             onPress={() => {}}
           />
 
-          {/* 아웃라인 카드도 글래스 느낌 업 */}
           <GlassOutlineCard
             icon={<Ionicons name="restaurant-outline" size={30} color={TINT} />}
             title="이번주 밥 메뉴"
@@ -159,7 +198,6 @@ function ActionCard({
   );
 }
 
-/** 아웃라인(하양) 카드를 글래스화 — Blur + 투명도 + 라운드 테두리 */
 function GlassOutlineCard({
   icon, title, accent, onPress,
 }: { icon: React.ReactNode; title: string; accent: string; onPress: () => void }) {
@@ -176,11 +214,11 @@ function GlassOutlineCard({
 }
 
 /* ---------------------- 스타일 ---------------------- */
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
   container: { paddingBottom: 120 },
 
+  /* 상단 보라 배경 */
   topBg: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
@@ -188,12 +226,14 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
 
+  /* 헤더 */
   topHero: {
     backgroundColor: 'transparent',
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
 
+  /* 인사 카드 */
   greetCardWrap: {
     borderRadius: 16,
     overflow: 'hidden',
@@ -205,6 +245,28 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 14,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  rolePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    height: 22,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    overflow: 'hidden',
+  },
+  rolePillBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  roleText: { fontSize: 12, fontWeight: '800' },
+
   avatar: { width: 48, height: 48, borderRadius: 999, backgroundColor: '#E9ECF6' },
   avatarFallback: { alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontWeight: '700', color: TITLE },
@@ -218,6 +280,7 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
 
+  /* 칩 */
   chipsRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
   chipWrap: {
     flex: 1,
@@ -227,7 +290,6 @@ const styles = StyleSheet.create({
     backgroundColor: GLASS,
     borderWidth: 1,
     borderColor: GLASS_BORDER,
-    // 유리 반짝임 살짝
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -237,8 +299,10 @@ const styles = StyleSheet.create({
   chipTitle: { fontSize: 16, fontWeight: '800' },
   chipValue: { fontSize: 13, color: '#6C7893', marginTop: 4 },
 
+  /* 그리드 */
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 16, paddingHorizontal: 16 },
 
+  /* 강조 글래스 카드 */
   actionCard: {
     width: '47%',
     borderRadius: 18,
@@ -254,6 +318,7 @@ const styles = StyleSheet.create({
   },
   actionText: { color: '#fff', fontSize: 15, fontWeight: '800', lineHeight: 22 },
 
+  /* 아웃라인 글래스 카드 */
   outlineCard: {
     width: '47%',
     borderRadius: 18,
@@ -262,16 +327,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: GLASS_BORDER,
   },
-  outlineInner: {
-    padding: 14,
-  },
+  outlineInner: { padding: 14 },
   outlineIconCir: {
     width: 54, height: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
   outlineText: { fontSize: 15, fontWeight: '800', lineHeight: 22 },
 
+  /* 리스트 */
   sectionTitle: { marginTop: 18, marginBottom: 10, fontSize: 18, fontWeight: '900', color: TITLE, paddingHorizontal: 16 },
-
   listGlassWrap: {
     marginHorizontal: 16,
     borderRadius: 14,
