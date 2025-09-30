@@ -29,8 +29,20 @@ const TINT = '#2C6DF7';
 const TINT_GREEN = '#11B38D';
 const TITLE = '#0E1420';
 
-// ✅ 상단 보라색 영역 ‘본문’ 높이 (상태바 높이는 자동합산)
+// ✅ 상단 보라색 영역 '본문' 높이 (상태바 높이는 자동합산)
 const HEADER_PURPLE_HEIGHT = 44;
+
+// 최근 예약 데이터 타입
+interface ReservationItem {
+  id: string;
+  type: 'study_room' | 'refrigerator';
+  title: string;
+  subtitle: string;
+  icon: string;
+  time?: string;
+  status?: string;
+  onPress: () => void;
+}
 
 /** HEX → RGBA 배경색 유틸 (텍스트/아이콘 투명도 영향 없도록!) */
 function hexToRgba(hex: string, alpha = 1) {
@@ -59,6 +71,28 @@ export default function HomeScreen() {
       })();
     }, [])
   );
+
+  // 최근 예약 데이터
+  const recentReservations: ReservationItem[] = [
+    {
+      id: '1',
+      type: 'study_room',
+      title: 'Study Room Booked',
+      subtitle: 'Room B-301',
+      icon: '📅',
+      time: 'Today 2:00 PM',
+      onPress: () => router.push('/(tabs)/reservation'),
+    },
+    {
+      id: '2',
+      type: 'refrigerator',
+      title: 'Refrigerator Items',
+      subtitle: '3 items expiring this week',
+      icon: '🧊',
+      status: 'Check items below',
+      onPress: () => router.push('/refrigerator'),
+    },
+  ];
 
   // 상단 보라 배경 높이(상태바 + 헤더 본문)
   const topBgStyle: StyleProp<ViewStyle> = { height: insets.top + HEADER_PURPLE_HEIGHT };
@@ -129,7 +163,7 @@ export default function HomeScreen() {
             icon={<Ionicons name="restaurant-outline" size={30} color={TINT} />}
             title="이번주 밥 메뉴"
             accent={TINT}
-            onPress={() => {}}
+            onPress={() => router.push('/weekly-menu')}
           />
           <GlassOutlineCard
             icon={<Ionicons name="chatbubbles-outline" size={30} color={TINT_GREEN} />}
@@ -141,19 +175,11 @@ export default function HomeScreen() {
 
         {/* ===== 리스트 ===== */}
         <Text style={styles.sectionTitle}>나의 최근 예약</Text>
-        <View style={styles.listGlassWrap}>
-          <BlurView intensity={26} tint="light" style={StyleSheet.absoluteFill} />
-          <View style={styles.listItemInner}>
-            <View style={styles.emojiBox}>
-              <Text style={{ fontSize: 18 }}>📅</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.itemTitle}>Study Room Booked</Text>
-              <Text style={styles.itemSub}>Room B-301 • Today 2:00 PM</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#687089" />
-          </View>
-        </View>
+        
+        {/* 최근 예약 목록 */}
+        {recentReservations.map((item) => (
+          <ReservationListItem key={item.id} item={item} />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -196,6 +222,28 @@ function GlassOutlineCard({
         <View style={[styles.outlineIconCir, { backgroundColor: accent + '14' }]}>{icon}</View>
         <Text style={[styles.outlineText, { color: '#2F3A4F' }]}>{title}</Text>
         <Ionicons name="chevron-forward" size={20} color={accent} style={{ marginTop: 8 }} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function ReservationListItem({ item }: { item: ReservationItem }) {
+  return (
+    <TouchableOpacity style={styles.listGlassWrap} onPress={item.onPress}>
+      <BlurView intensity={26} tint="light" style={StyleSheet.absoluteFill} />
+      <View style={styles.listItemInner}>
+        <View style={styles.emojiBox}>
+          <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.itemTitle}>{item.title}</Text>
+          <Text style={styles.itemSub}>
+            {item.subtitle}
+            {item.time && ` • ${item.time}`}
+            {item.status && ` • ${item.status}`}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#687089" />
       </View>
     </TouchableOpacity>
   );
@@ -316,6 +364,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
+    marginBottom: 8,
   },
   listItemInner: {
     padding: 12,
