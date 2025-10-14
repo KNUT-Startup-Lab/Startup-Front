@@ -54,6 +54,21 @@ export default function LoginScreen() {
     if (loading) return;
     setLoading(true);
     try {
+      // 임시 로그인: 이메일/비밀번호 모두 "1"이면 바로 통과
+      if (email === '1' && password === '1') {
+        await AsyncStorage.multiSet([
+          ['accessToken', 'dummy-token'],
+          ['refreshToken', 'dummy-refresh-token'],
+          ['userEmail', role === 'admin' ? 'admin@test.com' : 'student@test.com'],
+          ['userId', role === 'admin' ? 'admin-001' : 'student-001'],
+          ['userName', role === 'admin' ? '관리자' : '학생'],
+        ]);
+        router.replace('/(tabs)');
+        return;
+      }
+
+      // 기존 API 로그인 (주석처리됨)
+      /*
       const res = await api<{ user_id: string; email: string; name?: string; accessToken: string; refreshToken: string }>(
         '/api/auth/login',
         { method: 'POST', body: { email, password } }
@@ -66,6 +81,9 @@ export default function LoginScreen() {
         ['userName', res.name ?? ''],
       ]);
       router.replace('/(tabs)');
+      */
+
+      Alert.alert('알림', '현재는 이메일/비밀번호에 "1"을 입력해주세요.');
     } catch (e: any) {
       Alert.alert('오류', e?.message ?? '로그인 실패');
     } finally {
