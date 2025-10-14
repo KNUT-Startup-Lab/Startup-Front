@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 const ACTIVE = '#2C6DF7';
 const INACTIVE = '#59627C';
@@ -137,6 +139,15 @@ function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 }
 
 export default function Layout() {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // 관리자인지 확인
+    AsyncStorage.getItem('userEmail').then((email) => {
+      setIsAdmin(email === 'admin@test.com');
+    });
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
@@ -171,6 +182,21 @@ export default function Layout() {
           ),
         }}
       />
+      {isAdmin && (
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: '관리',
+            tabBarIcon: ({ focused, color }) => (
+              <Ionicons
+                name="settings-outline"
+                size={24}
+                color={focused ? ACTIVE : INACTIVE}
+              />
+            ),
+          }}
+        />
+      )}
       <Tabs.Screen
         name="community"
         options={{
