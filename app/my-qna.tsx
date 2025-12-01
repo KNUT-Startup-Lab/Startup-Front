@@ -3,38 +3,47 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Modal,
+  SafeAreaView,
   ScrollView,
-  Image,
-  ActivityIndicator,
+  Pressable,
   Alert,
+  Modal,
+  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 
-interface MyQnAItem {
+
+const BG = '#F6F8FF';
+const BASE = '#D6DDFF';
+const TITLE = '#0E1420';
+const TINT = '#2C6DF7';
+const ACCENT = '#13B38D';
+
+type MyQnAItem = {
   id: string;
   title: string;
   content: string;
   status: 'pending' | 'answered';
   category: string;
-  submittedAt: string;
-  updatedAt?: string;
-  images?: string[];
+  submittedAt: number;
+  updatedAt?: number;
   answer?: string;
   adminName?: string;
-}
+};
 
-const MyQnAScreen: React.FC = () => {
+export default function MyQnAScreen() {
   const router = useRouter();
   const [myQnaList, setMyQnaList] = useState<MyQnAItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<MyQnAItem | null>(null);
-  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'answered'>('all');
+
+  // 상세 모달
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MyQnAItem | null>(null);
 
   useEffect(() => {
     fetchMyQnAList();
@@ -47,36 +56,35 @@ const MyQnAScreen: React.FC = () => {
       const mockData: MyQnAItem[] = [
         {
           id: '1',
-          title: 'Air conditioner not working in room 204',
-          content: 'The AC unit has been making strange noises and not cooling properly for the past two days.',
+          title: '204호 에어컨 고장',
+          content: '에어컨에서 이상한 소리가 나고 냉방이 안 됩니다. 2일째 계속 그래요.',
           status: 'pending',
           category: '에어컨',
-          submittedAt: '2025-01-20T10:00:00Z',
+          submittedAt: Date.now() - 1000 * 60 * 60 * 2,
         },
         {
           id: '2',
-          title: 'WiFi connection issues',
-          content: 'Having trouble connecting to WiFi on 2nd floor.',
+          title: 'WiFi 연결 문제',
+          content: '2층에서 WiFi 연결이 자주 끊깁니다.',
           status: 'answered',
           category: 'WiFi',
-          submittedAt: '2025-01-19T14:30:00Z',
-          updatedAt: '2025-01-20T09:00:00Z',
-          answer: 'We have reset the router on your floor. Please try reconnecting and let us know if the issue persists.',
+          submittedAt: Date.now() - 1000 * 60 * 60 * 24,
+          updatedAt: Date.now() - 1000 * 60 * 60 * 12,
+          answer: '라우터를 재설정했습니다. 다시 연결해보시고 문제가 지속되면 알려주세요.',
           adminName: '관리자',
         },
         {
           id: '3',
-          title: 'Laundry machine out of order',
-          content: 'Machine #3 on the 2nd floor is not starting. The display shows an error code.',
+          title: '세탁기 3번 오류',
+          content: '2층 세탁기 3번에서 E3 오류가 뜹니다.',
           status: 'pending',
           category: '세탁기',
-          submittedAt: '2025-01-18T16:45:00Z',
+          submittedAt: Date.now() - 1000 * 60 * 60 * 48,
         },
       ];
       setMyQnaList(mockData);
     } catch (error) {
-      console.error('Error fetching my Q&A list:', error);
-      Alert.alert('오류', '내 Q&A 정보를 불러올 수 없습니다.');
+      Alert.alert('오류', '내 Q&A를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -88,502 +96,419 @@ const MyQnAScreen: React.FC = () => {
     fetchMyQnAList();
   };
 
-  const deleteQnA = async (qnaId: string) => {
-    Alert.alert(
-      'Q&A 삭제',
-      '이 질문을 삭제하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: () => {
-            setMyQnaList(prev => prev.filter(item => item.id !== qnaId));
-            Alert.alert('성공', 'Q&A가 삭제되었습니다.');
-            setIsDetailModalVisible(false);
-          },
+  const deleteQuestion = (id: string) => {
+    Alert.alert('삭제', '이 질문을 삭제할까요?', [
+      { text: '취소' },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: () => {
+          setMyQnaList(prev => prev.filter(item => item.id !== id));
+          setDetailVisible(false);
+          Alert.alert('완료', 'Q&A가 삭제되었습니다.');
         },
-      ]
-    );
+      },
+    ]);
+  };
+
+  const openDetail = (item: MyQnAItem) => {
+    setSelectedItem(item);
+    setDetailVisible(true);
+  };
+
+  const timeAgo = (t: number) => {
+    const diff = Date.now() - t;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) return `${Math.max(1, minutes)}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    return `${days}일 전`;
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return '#FF9500';
-      case 'answered':
-        return '#34C759';
-      default:
-        return '#8E8E93';
-    }
+    return status === 'answered' ? ACCENT : '#FF9500';
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return '답변 대기';
-      case 'answered':
-        return '답변 완료';
-      default:
-        return '처리중';
-    }
+    return status === 'answered' ? '답변 완료' : '답변 대기';
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return `오늘 ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-    } else if (diffDays === 1) {
-      return `어제 ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-    } else if (diffDays < 7) {
-      return `${diffDays}일 전`;
-    } else {
-      return `${date.getMonth() + 1}/${date.getDate()}`;
-    }
+  const filteredList = filter === 'all'
+    ? myQnaList
+    : myQnaList.filter(item => item.status === filter);
+
+  const stats = {
+    total: myQnaList.length,
+    pending: myQnaList.filter(i => i.status === 'pending').length,
+    answered: myQnaList.filter(i => i.status === 'answered').length,
   };
-
-  const getFilteredList = () => {
-    if (filter === 'all') {
-      return myQnaList;
-    }
-    return myQnaList.filter(item => item.status === filter);
-  };
-
-  const FilterButton = ({ filterType, title }: { filterType: 'all' | 'pending' | 'answered', title: string }) => (
-    <TouchableOpacity
-      style={[
-        styles.filterButton,
-        filter === filterType && styles.filterButtonActive
-      ]}
-      onPress={() => setFilter(filterType)}
-    >
-      <Text style={[
-        styles.filterButtonText,
-        filter === filterType && styles.filterButtonTextActive
-      ]}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const QnAListItem = ({ item }: { item: MyQnAItem }) => (
-    <TouchableOpacity
-      style={styles.qnaItem}
-      onPress={() => {
-        setSelectedItem(item);
-        setIsDetailModalVisible(true);
-      }}
-    >
-      <View style={styles.qnaHeader}>
-        <Text style={styles.qnaTitle} numberOfLines={1}>{item.title}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
-        </View>
-      </View>
-      
-      <Text style={styles.qnaContent} numberOfLines={2}>{item.content}</Text>
-      
-      <View style={styles.qnaFooter}>
-        <Text style={styles.category}>{item.category}</Text>
-        <Text style={styles.date}>{formatDate(item.submittedAt)}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const filteredList = getFilteredList();
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>내 Q&A를 불러오는 중...</Text>
-      </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={TINT} />
+          <Text style={styles.loadingText}>내 Q&A를 불러오는 중...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>← 뒤로</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>내 Q&A</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/qna')}
-        >
-          <Text style={styles.addButtonText}>+ 새 질문</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 통계 카드 */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{myQnaList.length}</Text>
-          <Text style={styles.statLabel}>총 질문</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: '#FF9500' }]}>
-            {myQnaList.filter(item => item.status === 'pending').length}
-          </Text>
-          <Text style={styles.statLabel}>답변 대기</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statNumber, { color: '#34C759' }]}>
-            {myQnaList.filter(item => item.status === 'answered').length}
-          </Text>
-          <Text style={styles.statLabel}>답변 완료</Text>
-        </View>
-      </View>
-
-      {/* 필터 버튼들 */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-        <FilterButton filterType="all" title="전체" />
-        <FilterButton filterType="pending" title="답변 대기" />
-        <FilterButton filterType="answered" title="답변 완료" />
-      </ScrollView>
-
-      {/* Q&A 목록 */}
-      <FlatList
-        data={filteredList}
-        renderItem={({ item }) => <QnAListItem item={item} />}
-        keyExtractor={(item) => item.id}
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={22} color={TITLE} />
+          </Pressable>
+          <Text style={styles.headerTitle}>내 Q&A</Text>
+          <Pressable style={styles.newBtn} onPress={() => router.push('/qna')}>
+            <Text style={styles.newBtnText}>+ 새 질문</Text>
+          </Pressable>
+        </View>
+
+        {/* 통계 카드 (글래스) */}
+        <View style={styles.statsWrap}>
+          <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+          <View style={styles.statsInner}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.total}</Text>
+              <Text style={styles.statLabel}>총 질문</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: '#FF9500' }]}>{stats.pending}</Text>
+              <Text style={styles.statLabel}>답변 대기</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: ACCENT }]}>{stats.answered}</Text>
+              <Text style={styles.statLabel}>답변 완료</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 필터 버튼 */}
+        <View style={styles.filterWrap}>
+          {(['all', 'pending', 'answered'] as const).map(f => (
+            <Pressable
+              key={f}
+              style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
+              onPress={() => setFilter(f)}
+            >
+              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+                {f === 'all' ? '전체' : f === 'pending' ? '답변 대기' : '답변 완료'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* 힌트 */}
+        <Text style={styles.sectionHint}>내가 작성한 질문 목록입니다</Text>
+
+        {/* Q&A 목록 */}
+        {filteredList.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons name="document-text-outline" size={48} color="#9AA5BD" />
+            <Text style={styles.emptyText}>
               {filter === 'all' ? '작성한 질문이 없습니다' : `${getStatusText(filter)} 상태의 질문이 없습니다`}
             </Text>
             {filter === 'all' && (
-              <TouchableOpacity
-                style={styles.createFirstButton}
-                onPress={() => router.push('/qna')}
-              >
-                <Text style={styles.createFirstButtonText}>첫 질문 작성하기</Text>
-              </TouchableOpacity>
+              <Pressable style={styles.emptyBtn} onPress={() => router.push('/qna')}>
+                <Text style={styles.emptyBtnText}>첫 질문 작성하기</Text>
+              </Pressable>
             )}
           </View>
-        }
-      />
+        ) : (
+          filteredList.map(item => (
+            <Pressable key={item.id} style={styles.qnaCard} onPress={() => openDetail(item)}>
+              <View style={styles.qnaHeader}>
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{item.category}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                  <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.qnaTitle} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.qnaContent} numberOfLines={2}>{item.content}</Text>
+
+              <View style={styles.qnaFooter}>
+                <Text style={styles.qnaTime}>{timeAgo(item.submittedAt)}</Text>
+                {item.status === 'answered' && (
+                  <View style={styles.answeredHint}>
+                    <Ionicons name="checkmark-circle" size={14} color={ACCENT} />
+                    <Text style={styles.answeredText}>답변 있음</Text>
+                  </View>
+                )}
+              </View>
+            </Pressable>
+          ))
+        )}
+      </ScrollView>
 
       {/* 질문 상세 모달 */}
-      <Modal
-        visible={isDetailModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setIsDetailModalVisible(false)}>
-              <Text style={styles.cancelButton}>닫기</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>질문 상세</Text>
-            {selectedItem && selectedItem.status === 'pending' && (
-              <TouchableOpacity onPress={() => deleteQnA(selectedItem.id)}>
-                <Text style={styles.deleteButton}>삭제</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {selectedItem && (
-            <ScrollView style={styles.modalContent}>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedItem.status), alignSelf: 'flex-start' }]}>
-                <Text style={styles.statusText}>{getStatusText(selectedItem.status)}</Text>
-              </View>
-              
-              <Text style={styles.detailTitle}>{selectedItem.title}</Text>
-              <Text style={styles.detailMeta}>
-                {selectedItem.category} • {formatDate(selectedItem.submittedAt)}
-              </Text>
-              
-              <Text style={styles.detailContent}>{selectedItem.content}</Text>
-              
-              {selectedItem.answer && (
-                <View style={styles.answerContainer}>
-                  <Text style={styles.answerLabel}>관리자 답변</Text>
-                  {selectedItem.adminName && (
-                    <Text style={styles.adminName}>답변자: {selectedItem.adminName}</Text>
-                  )}
-                  <Text style={styles.answerContent}>{selectedItem.answer}</Text>
-                  {selectedItem.updatedAt && (
-                    <Text style={styles.answerDate}>
-                      답변일: {formatDate(selectedItem.updatedAt)}
-                    </Text>
+      <Modal transparent visible={detailVisible} animationType="slide" onRequestClose={() => setDetailVisible(false)}>
+        <View style={styles.modalWrap}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setDetailVisible(false)} />
+          <View style={[styles.modalSheet, { maxHeight: '80%' }]}>
+            {selectedItem && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.detailHeader}>
+                  <Text style={styles.modalTitle}>질문 상세</Text>
+                  {selectedItem.status === 'pending' && (
+                    <Pressable onPress={() => deleteQuestion(selectedItem.id)}>
+                      <Ionicons name="trash-outline" size={20} color="#E25C5C" />
+                    </Pressable>
                   )}
                 </View>
-              )}
-            </ScrollView>
-          )}
+
+                <View style={styles.detailBadges}>
+                  <View style={styles.categoryBadge}>
+                    <Text style={styles.categoryText}>{selectedItem.category}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedItem.status) }]}>
+                    <Text style={styles.statusText}>{getStatusText(selectedItem.status)}</Text>
+                  </View>
+                </View>
+
+                <Text style={styles.detailTitle}>{selectedItem.title}</Text>
+                <Text style={styles.detailTime}>{timeAgo(selectedItem.submittedAt)}</Text>
+                <Text style={styles.detailContent}>{selectedItem.content}</Text>
+
+                {selectedItem.answer && (
+                  <View style={styles.answerBox}>
+                    <View style={styles.answerHeader}>
+                      <Ionicons name="chatbubble-ellipses" size={18} color={TINT} />
+                      <Text style={styles.answerLabel}>관리자 답변</Text>
+                    </View>
+                    {selectedItem.adminName && (
+                      <Text style={styles.adminName}>{selectedItem.adminName}</Text>
+                    )}
+                    <Text style={styles.answerContent}>{selectedItem.answer}</Text>
+                    {selectedItem.updatedAt && (
+                      <Text style={styles.answerTime}>{timeAgo(selectedItem.updatedAt)}</Text>
+                    )}
+                  </View>
+                )}
+
+                <Pressable
+                  style={[styles.modalBtn, { backgroundColor: '#E7ECF7', marginTop: 16 }]}
+                  onPress={() => setDetailVisible(false)}
+                >
+                  <Text style={[styles.modalBtnText, { color: '#3A4760' }]}>닫기</Text>
+                </Pressable>
+              </ScrollView>
+            )}
+          </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
+  safe: { flex: 1, backgroundColor: BG },
+  container: { paddingBottom: 40 },
+
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: '#6C7893' },
+
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: BASE,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 12,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
   },
-  addButtonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: 'white',
-    marginBottom: 8,
-  },
-  statCard: {
-    flex: 1,
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFFB8',
     alignItems: 'center',
-    paddingVertical: 12,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  filterContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    marginBottom: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
     marginRight: 8,
   },
-  filterButtonActive: {
-    backgroundColor: '#007AFF',
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '900', color: TITLE },
+  newBtn: {
+    backgroundColor: TINT,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
+  newBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+
+  // 통계 카드
+  statsWrap: {
+    marginTop: 12,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FFFFFFC8',
+    backgroundColor: '#FFFFFF99',
   },
-  filterButtonTextActive: {
-    color: 'white',
+  statsInner: {
+    flexDirection: 'row',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
   },
-  listContainer: {
-    padding: 16,
+  statItem: { flex: 1, alignItems: 'center' },
+  statNumber: { fontSize: 24, fontWeight: '900', color: TITLE },
+  statLabel: { fontSize: 12, color: '#6C7893', marginTop: 4 },
+  statDivider: { width: 1, backgroundColor: '#E8ECF5' },
+
+  // 필터
+  filterWrap: {
+    flexDirection: 'row',
+    marginTop: 12,
+    marginHorizontal: 16,
+    gap: 8,
   },
-  qnaItem: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+  filterBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8ECF5',
+  },
+  filterBtnActive: {
+    backgroundColor: TINT,
+    borderColor: TINT,
+  },
+  filterText: { fontSize: 13, fontWeight: '600', color: '#6C7893' },
+  filterTextActive: { color: '#fff' },
+
+  sectionHint: {
+    marginTop: 14,
+    marginBottom: 8,
+    marginHorizontal: 16,
+    fontSize: 12,
+    color: '#6C7893',
+  },
+
+  // Q&A 카드
+  qnaCard: {
+    marginHorizontal: 16,
     marginBottom: 12,
+    backgroundColor: '#FFFFFFDA',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8ECF5',
+    padding: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
   },
   qnaHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  qnaTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    marginRight: 12,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
+  categoryBadge: {
+    backgroundColor: '#EAF1FF',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DDE6FF',
   },
-  statusText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
+  categoryText: { fontSize: 12, fontWeight: '700', color: TINT },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
-  qnaContent: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
+  statusText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  qnaTitle: { fontSize: 15, fontWeight: '800', color: TITLE, marginBottom: 6 },
+  qnaContent: { fontSize: 13, color: '#5C6886', lineHeight: 18 },
   qnaFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 10,
   },
-  category: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  date: {
-    fontSize: 12,
-    color: '#999',
-  },
-  emptyState: {
-    backgroundColor: 'white',
-    borderRadius: 12,
+  qnaTime: { fontSize: 11, color: '#8C97B0' },
+  answeredHint: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  answeredText: { fontSize: 11, color: ACCENT, fontWeight: '600' },
+
+  // 빈 상태
+  emptyCard: {
+    marginHorizontal: 16,
+    backgroundColor: '#FFFFFFDA',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8ECF5',
     padding: 32,
     alignItems: 'center',
-    marginTop: 50,
   },
-  emptyStateText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  createFirstButton: {
-    backgroundColor: '#007AFF',
+  emptyText: { fontSize: 14, color: '#6C7893', marginTop: 12, marginBottom: 16, textAlign: 'center' },
+  emptyBtn: {
+    backgroundColor: TINT,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
-  createFirstButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+  emptyBtnText: { color: '#fff', fontWeight: '800' },
+
+  // 모달 공통
+  modalWrap: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.25)' },
+  modalSheet: {
+    backgroundColor: '#FFFFFFEE',
+    padding: 16,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E8ECF5',
   },
-  modalContainer: {
+  modalTitle: { fontWeight: '900', fontSize: 16, color: TITLE },
+  modalBtn: {
     flex: 1,
-    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
-  modalHeader: {
+  modalBtnText: { color: '#fff', fontWeight: '900' },
+
+  // 상세 모달
+  detailHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    marginBottom: 12,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  cancelButton: {
-    fontSize: 16,
-    color: '#666',
-  },
-  deleteButton: {
-    fontSize: 16,
-    color: '#FF3B30',
-    fontWeight: '600',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  detailTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  detailMeta: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-  },
-  detailContent: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  answerContainer: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 20,
-  },
-  answerLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 8,
-  },
-  adminName: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 8,
-  },
-  answerContent: {
-    fontSize: 15,
-    color: '#333',
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  answerDate: {
-    fontSize: 12,
-    color: '#666',
-  },
-});
+  detailBadges: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  detailTitle: { fontSize: 18, fontWeight: '900', color: TITLE, marginBottom: 4 },
+  detailTime: { fontSize: 12, color: '#8C97B0', marginBottom: 12 },
+  detailContent: { fontSize: 14, color: '#27324A', lineHeight: 22 },
 
-export default MyQnAScreen;
+  // 답변 박스
+  answerBox: {
+    marginTop: 20,
+    backgroundColor: '#F2F6FF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E4EBFF',
+    padding: 14,
+  },
+  answerHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  answerLabel: { fontSize: 14, fontWeight: '800', color: TINT },
+  adminName: { fontSize: 12, color: '#6C7893', marginBottom: 8 },
+  answerContent: { fontSize: 14, color: '#27324A', lineHeight: 20 },
+  answerTime: { fontSize: 11, color: '#8C97B0', marginTop: 8 },
+});
