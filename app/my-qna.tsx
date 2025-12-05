@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// app/my-qna.tsx - API 연동 버전
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,109 +15,92 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
+import { QnAAPI, QnAItem, QnAStatus } from '../src/api/qna';
 
-
+// Community와 동일한 색상
 const BG = '#F6F8FF';
 const BASE = '#D6DDFF';
 const TITLE = '#0E1420';
 const TINT = '#2C6DF7';
 const ACCENT = '#13B38D';
 
-type MyQnAItem = {
-  id: string;
-  title: string;
-  content: string;
-  status: 'pending' | 'answered';
-  category: string;
-  submittedAt: number;
-  updatedAt?: number;
-  answer?: string;
-  adminName?: string;
-};
-
 export default function MyQnAScreen() {
   const router = useRouter();
-  const [myQnaList, setMyQnaList] = useState<MyQnAItem[]>([]);
+  const [myQnaList, setMyQnaList] = useState<QnAItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'answered'>('all');
+  const [filter, setFilter] = useState<QnAStatus>('all');
+  const [total, setTotal] = useState(0);
 
   // 상세 모달
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<MyQnAItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<QnAItem | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
-  useEffect(() => {
-    fetchMyQnAList();
-  }, []);
-
-  const fetchMyQnAList = async () => {
+  // 데이터 로드
+  const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
-      // 임시 목업 데이터
-      const mockData: MyQnAItem[] = [
-        {
-          id: '1',
-          title: '204호 에어컨 고장',
-          content: '에어컨에서 이상한 소리가 나고 냉방이 안 됩니다. 2일째 계속 그래요.',
-          status: 'pending',
-          category: '에어컨',
-          submittedAt: Date.now() - 1000 * 60 * 60 * 2,
-        },
-        {
-          id: '2',
-          title: 'WiFi 연결 문제',
-          content: '2층에서 WiFi 연결이 자주 끊깁니다.',
-          status: 'answered',
-          category: 'WiFi',
-          submittedAt: Date.now() - 1000 * 60 * 60 * 24,
-          updatedAt: Date.now() - 1000 * 60 * 60 * 12,
-          answer: '라우터를 재설정했습니다. 다시 연결해보시고 문제가 지속되면 알려주세요.',
-          adminName: '관리자',
-        },
-        {
-          id: '3',
-          title: '세탁기 3번 오류',
-          content: '2층 세탁기 3번에서 E3 오류가 뜹니다.',
-          status: 'pending',
-          category: '세탁기',
-          submittedAt: Date.now() - 1000 * 60 * 60 * 48,
-        },
-      ];
-      setMyQnaList(mockData);
+      const params = filter === 'all' ? { limit: 20 } : { status: filter, limit: 20 };
+      const res = await QnAAPI.getMyList(params);
+      setMyQnaList(res.items || []);
+      setTotal(res.total || 0);
     } catch (error) {
-      Alert.alert('오류', '내 Q&A를 불러올 수 없습니다.');
+      console.error('내 Q&A 로드 실패:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchMyQnAList();
+    fetchData();
   };
 
-  const deleteQuestion = (id: string) => {
+  // Q&A 삭제
+  const deleteQuestion = (id: number) => {
     Alert.alert('삭제', '이 질문을 삭제할까요?', [
       { text: '취소' },
       {
         text: '삭제',
         style: 'destructive',
-        onPress: () => {
-          setMyQnaList(prev => prev.filter(item => item.id !== id));
-          setDetailVisible(false);
-          Alert.alert('완료', 'Q&A가 삭제되었습니다.');
+        onPress: async () => {
+          try {
+            await QnAAPI.delete(id);
+            Alert.alert('완료', 'Q&A가 삭제되었습니다.');
+            setDetailVisible(false);
+            fetchData();
+          } catch (error) {
+            // 에러는 api client에서 처리
+          }
         },
       },
     ]);
   };
 
-  const openDetail = (item: MyQnAItem) => {
+  // 상세 조회
+  const openDetail = async (item: QnAItem) => {
     setSelectedItem(item);
     setDetailVisible(true);
+    setDetailLoading(true);
+
+    try {
+      const detail = await QnAAPI.getDetail(item.id);
+      setSelectedItem(detail);
+    } catch (error) {
+      // 에러는 api client에서 처리
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
-  const timeAgo = (t: number) => {
+  // 시간 표시
+  const timeAgo = (dateStr: string) => {
+    const t = new Date(dateStr).getTime();
     const diff = Date.now() - t;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
@@ -135,12 +119,9 @@ export default function MyQnAScreen() {
     return status === 'answered' ? '답변 완료' : '답변 대기';
   };
 
-  const filteredList = filter === 'all'
-    ? myQnaList
-    : myQnaList.filter(item => item.status === filter);
-
+  // 통계
   const stats = {
-    total: myQnaList.length,
+    total: total,
     pending: myQnaList.filter(i => i.status === 'pending').length,
     answered: myQnaList.filter(i => i.status === 'answered').length,
   };
@@ -214,7 +195,7 @@ export default function MyQnAScreen() {
         <Text style={styles.sectionHint}>내가 작성한 질문 목록입니다</Text>
 
         {/* Q&A 목록 */}
-        {filteredList.length === 0 ? (
+        {myQnaList.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="document-text-outline" size={48} color="#9AA5BD" />
             <Text style={styles.emptyText}>
@@ -227,7 +208,7 @@ export default function MyQnAScreen() {
             )}
           </View>
         ) : (
-          filteredList.map(item => (
+          myQnaList.map(item => (
             <Pressable key={item.id} style={styles.qnaCard} onPress={() => openDetail(item)}>
               <View style={styles.qnaHeader}>
                 <View style={styles.categoryBadge}>
@@ -242,7 +223,7 @@ export default function MyQnAScreen() {
               <Text style={styles.qnaContent} numberOfLines={2}>{item.content}</Text>
 
               <View style={styles.qnaFooter}>
-                <Text style={styles.qnaTime}>{timeAgo(item.submittedAt)}</Text>
+                <Text style={styles.qnaTime}>{timeAgo(item.createdAt)}</Text>
                 {item.status === 'answered' && (
                   <View style={styles.answeredHint}>
                     <Ionicons name="checkmark-circle" size={14} color={ACCENT} />
@@ -260,7 +241,11 @@ export default function MyQnAScreen() {
         <View style={styles.modalWrap}>
           <Pressable style={styles.modalBackdrop} onPress={() => setDetailVisible(false)} />
           <View style={[styles.modalSheet, { maxHeight: '80%' }]}>
-            {selectedItem && (
+            {detailLoading ? (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={TINT} />
+              </View>
+            ) : selectedItem && (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.detailHeader}>
                   <Text style={styles.modalTitle}>질문 상세</Text>
@@ -281,7 +266,7 @@ export default function MyQnAScreen() {
                 </View>
 
                 <Text style={styles.detailTitle}>{selectedItem.title}</Text>
-                <Text style={styles.detailTime}>{timeAgo(selectedItem.submittedAt)}</Text>
+                <Text style={styles.detailTime}>{timeAgo(selectedItem.createdAt)}</Text>
                 <Text style={styles.detailContent}>{selectedItem.content}</Text>
 
                 {selectedItem.answer && (
